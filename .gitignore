@@ -17,3 +17,10 @@ ansible.cfg
 
 # output
 out/
+
+# local python versions (astral-sh)
+cpython-*
+python-*
+
+# tox
+.tox

@@ -106,8 +106,9 @@ To test with the latest version of ansible :
 tox -e latest
 ```
 
-For earliest version, the configuration requires python 3.11
-(install it using `asdf`, or any other python manager).
+For earliest version, the configuration requires python 3.11 (install
+it using `asdf`, or any other python manager, or get a locally relocatable
+from <https://github.com/astral-sh/python-build-standalone/releases>).
 To test with the minimal version of ansible :
 
 ```sh

@@ -93,6 +93,29 @@ All variable names are prefixed with `sandboxing_`.
     - role: ansible_role_sandboxing
 ```
 
+## Testing
+
+Testing is done with `tox` (python version and environment manager),
+`molecule` (ansible role testing framework) and `podman` (target
+container system-under-test).
+
+For latest ansible version, the configuration uses python 3.13 (debian 13).
+To test with the latest version of ansible :
+
+```sh
+tox -e latest
+```
+
+For earliest version, the configuration requires python 3.11
+(install it using `asdf`, or any other python manager).
+To test with the minimal version of ansible :
+
+```sh
+tox -e minimal # UNTESTED
+```
+
+See `tox.ini` for more details.
+
 ## License
 
 MIT

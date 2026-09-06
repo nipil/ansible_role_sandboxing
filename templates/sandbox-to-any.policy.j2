@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<policy target="ACCEPT">
+  <short>Sandbox to Any</short>
+  <ingress-zone name="{{ sandboxing_firewalld_default_zone }}" />
+  <egress-zone name="ANY" />
+  {% for sandboxing_non_public_network in sandboxing_ipv4_non_public_networks %}
+  <rule family="ipv4">
+    <destination address="{{ sandboxing_non_public_network }}" />
+    <reject />
+  </rule>
+  {% endfor %}
+</policy>

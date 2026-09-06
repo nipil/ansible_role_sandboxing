@@ -1,0 +1,155 @@
+---
+- name: Validate sandboxing_base_home
+  ansible.builtin.assert:
+    that:
+      - sandboxing_base_home is defined
+      - sandboxing_base_home is string
+
+- name: Validate sandboxing_count
+  ansible.builtin.assert:
+    that:
+      - sandboxing_count is defined
+      - sandboxing_count is integer
+      - sandboxing_count >= 0
+
+- name: Validate sandboxing_base_name
+  ansible.builtin.assert:
+    that:
+      - sandboxing_base_name is defined
+      - sandboxing_base_name is string
+
+- name: Validate sandboxing_base_name_regex
+  ansible.builtin.assert:
+    that:
+      - sandboxing_base_name_regex is defined
+      - sandboxing_base_name_regex is string
+
+- name: Validate sandboxing_networkd_directory
+  ansible.builtin.assert:
+    that:
+      - sandboxing_networkd_directory is defined
+      - sandboxing_networkd_directory is string
+
+- name: Validate sandboxing_networkd_unit_prefix
+  ansible.builtin.assert:
+    that:
+      - sandboxing_networkd_unit_prefix is defined
+      - sandboxing_networkd_unit_prefix is integer
+      - sandboxing_networkd_unit_prefix >= 0
+
+- name: Validate sandboxing_network_base_octets
+  ansible.builtin.assert:
+    that:
+      - sandboxing_network_base_octets is defined
+      - sandboxing_network_base_octets is string
+      - sandboxing_network_base_octets is regex('([0-9]{1,3}\\.){2}[0-9]{1,3}', match_type='fullmatch')
+
+- name: Validate sandboxing_network_base_octets range
+  vars:
+    sandboxing_base_octets: "{{ sandboxing_network_base_octets.split('.') | map('int') | list }}"
+  ansible.builtin.assert:
+    that:
+      - sandboxing_base_octets[0] <= 255
+      - sandboxing_base_octets[1] <= 255
+      - sandboxing_base_octets[2] <= 255
+
+- name: Validate sandboxing_network_prefix
+  ansible.builtin.assert:
+    that:
+      - sandboxing_network_prefix is defined
+      - sandboxing_network_prefix is string
+
+- name: Validate sandboxing_network_size
+  ansible.builtin.assert:
+    that:
+      - sandboxing_network_size is defined
+      - sandboxing_network_size is integer
+      - sandboxing_network_size >= 4
+
+- name: Validate sandboxing address space stays in the same /16 as base
+  vars:
+    sandboxing_base_octets: "{{ sandboxing_network_base_octets.split('.') | map('int') | list }}"
+    sandboxing_base_int: >-
+      {{
+        (sandboxing_base_octets[0] * 0x1000000)
+        + (sandboxing_base_octets[1] * 0x10000)
+        + (sandboxing_base_octets[2] * 0x100)
+      }}
+    sandboxing_last_subnet_broadcast_int: >-
+      {{
+        sandboxing_base_int
+        if sandboxing_count == 0
+        else sandboxing_base_int + (sandboxing_count * sandboxing_network_size) - 1
+      }}
+  ansible.builtin.assert:
+    that:
+      - (sandboxing_base_int // 0x10000) == (sandboxing_last_subnet_broadcast_int // 0x10000)
+
+- name: Validate sandboxing_networkd_unit_name_regex
+  ansible.builtin.assert:
+    that:
+      - sandboxing_networkd_unit_name_regex is defined
+      - sandboxing_networkd_unit_name_regex is string
+
+- name: Validate sandboxing_sysctl_file
+  ansible.builtin.assert:
+    that:
+      - sandboxing_sysctl_file is defined
+      - sandboxing_sysctl_file is string
+
+- name: Validate sandboxing_firewalld_config
+  ansible.builtin.assert:
+    that:
+      - sandboxing_firewalld_config is defined
+      - sandboxing_firewalld_config is string
+
+- name: Validate sandboxing_firewalld_default_zone
+  ansible.builtin.assert:
+    that:
+      - sandboxing_firewalld_default_zone is defined
+      - sandboxing_firewalld_default_zone is string
+
+- name: Validate sandboxing_firewalld_policies_directory
+  ansible.builtin.assert:
+    that:
+      - sandboxing_firewalld_policies_directory is defined
+      - sandboxing_firewalld_policies_directory is string
+
+- name: Validate sandboxing_hosts_file
+  ansible.builtin.assert:
+    that:
+      - sandboxing_hosts_file is defined
+      - sandboxing_hosts_file is string
+
+- name: Detect default routes
+  register: sandboxing_firewalld_default_route_dev
+  changed_when: false
+  ansible.builtin.command:
+    argv:
+      - ip
+      - -json
+      - route
+      - show
+      - default
+
+- name: Assert exactly one default route
+  ansible.builtin.assert:
+    that:
+      - (sandboxing_firewalld_default_route_dev.stdout | from_json | length) == 1
+    fail_msg: Expected exactly one default route
+
+- name: Set sandboxing_firewalld_default_route_dev
+  ansible.builtin.set_fact:
+    sandboxing_firewalld_default_route_dev: >-
+      {{ (sandboxing_firewalld_default_route_dev.stdout | from_json)[0]['dev'] }}
+
+- name: Check that kvm group exists
+  changed_when: false
+  ansible.builtin.getent:
+    database: group
+
+- name: Assert kvm group exists
+  ansible.builtin.assert:
+    that:
+      - "'kvm' in ansible_facts.getent_group"
+    fail_msg: Group 'kvm' must be available (install udev)

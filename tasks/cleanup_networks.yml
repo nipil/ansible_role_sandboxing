@@ -1,0 +1,31 @@
+---
+- name: Find managed network files
+  register: sandboxing_network_files
+  ansible.builtin.find:
+    paths: "{{ sandboxing_networkd_directory }}"
+    file_type: file
+    recurse: false
+    use_regex: true
+    patterns:
+      - "{{ '^' ~ sandboxing_networkd_unit_name_regex ~ '$' }}"
+
+- name: Remove unused network files
+  loop: |
+    {%- set unused = [] -%}
+    {%- for network_file in sandboxing_network_files.files -%}
+      {%- if network_file.path
+              | basename
+              | regex_replace(sandboxing_networkd_unit_name_regex, '\\1')
+              | int
+              >= sandboxing_count -%}
+        {%- set _ = unused.append(network_file.path) -%}
+      {%- endif -%}
+    {%- endfor -%}
+    {{ unused }}
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  notify: Reload systemd-networkd - role {{ role_name }}
+
+- name: Flush handlers
+  ansible.builtin.meta: flush_handlers

@@ -1,0 +1,47 @@
+---
+- name: Find managed network interfaces
+  register: sandboxing_network_interfaces
+  ansible.builtin.find:
+    paths: "/sys/class/net"
+    file_type: link
+    recurse: false
+    use_regex: true
+    patterns:
+      - "{{ '^' ~ sandboxing_base_name_regex ~ '$' }}"
+
+- name: Compute unused sandbox interfaces
+  ansible.builtin.set_fact:
+    sandboxing_to_delete: |
+      {%- set unused = [] -%}
+      {%- for network_if in sandboxing_network_interfaces.files -%}
+        {%- if network_if.path
+              | basename
+              | regex_replace(sandboxing_base_name_regex, '\\1')
+              | int
+              >= sandboxing_count -%}
+          {%- set _ = unused.append(network_if.path) -%}
+        {%- endif -%}
+      {%- endfor -%}
+      {{ unused }}
+
+- name: Delete unused sandbox interfaces
+  loop: "{{ sandboxing_to_delete }}"
+  ansible.builtin.command:
+    removes: "{{ item }}"
+    argv:
+      - ip
+      - link
+      - delete
+      - dev
+      - "{{ item | basename }}"
+
+- name: Remove unused sandbox interfaces from sandbox firewalld zone
+  loop: "{{ sandboxing_to_delete }}"
+  notify: Reload firewalld - role {{ role_name }}
+  ansible.posix.firewalld:
+    zone: "{{ sandboxing_firewalld_default_zone }}"
+    interface: "{{ item | basename }}"
+    state: disabled
+    permanent: true
+    # applies to config files even if firewalld is not running
+    offline: true

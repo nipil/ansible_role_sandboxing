@@ -1,0 +1,14 @@
+---
+- name: Prepare
+  hosts: test_containers
+  gather_facts: false
+
+  tasks:
+    - name: Update package cache
+      ansible.builtin.apt:
+        update_cache: true
+
+    - name: Install prerequisites
+      ansible.builtin.apt:
+        name:
+          - udev # creates 'kvm' group

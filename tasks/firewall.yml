@@ -1,0 +1,84 @@
+# offline: true = applies to config files even if firewalld is not running
+---
+- name: Setup firewalld configuration
+  notify: Reload firewalld - role {{ role_name }}
+  ansible.builtin.copy:
+    src: firewalld.conf
+    dest: "{{ sandboxing_firewalld_config }}"
+    mode: "0644"
+    owner: root
+    group: root
+
+- name: Enable and start firewalld
+  ansible.builtin.systemd_service:
+    name: firewalld
+    masked: false
+    enabled: true
+    state: started
+
+- name: Enable masquerading on default interface
+  notify: Reload firewalld - role {{ role_name }}
+  ansible.posix.firewalld:
+    permanent: true
+    offline: true
+    zone: external # already configured for masquerading
+    state: enabled
+    interface: "{{ sandboxing_firewalld_default_route_dev }}"
+
+- name: Ensure sandbox firewalld zone exists
+  when: sandboxing_count | int > 0
+  notify: Reload firewalld - role {{ role_name }}
+  ansible.posix.firewalld:
+    permanent: true
+    offline: true
+    zone: "{{ sandboxing_firewalld_default_zone }}"
+    state: present
+
+- name: Reset sandbox firewalld zone target
+  when: sandboxing_count | int > 0
+  notify: Reload firewalld - role {{ role_name }}
+  ansible.posix.firewalld:
+    permanent: true
+    offline: true
+    zone: "{{ sandboxing_firewalld_default_zone }}"
+    target: default
+    state: enabled
+
+- name: Deploy "sandbox to host" policy
+  when: sandboxing_count | int > 0
+  notify: Reload firewalld - role {{ role_name }}
+  ansible.builtin.template:
+    src: sandbox-to-host.policy.j2
+    dest: "{{ sandboxing_firewalld_policies_directory }}/sandbox-to-host.xml"
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Deploy "sandbox to any" policy
+  when: sandboxing_count | int > 0
+  notify: Reload firewalld - role {{ role_name }}
+  ansible.builtin.template:
+    src: sandbox-to-any.policy.j2
+    dest: "{{ sandboxing_firewalld_policies_directory }}/sandbox-to-any.xml"
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Get firewalld backend
+  register: sandboxing_firewalld_backend
+  changed_when: false
+  ansible.builtin.command:
+    argv:
+      - python3
+      - -c
+      - |
+        from firewall.core.io.firewalld_conf import firewalld_conf
+        config = firewalld_conf('{{ sandboxing_firewalld_config }}')
+        config.read()
+        print(config.get('FirewallBackend'))
+
+- name: Assert nftables backend
+  ansible.builtin.assert:
+    that:
+      - sandboxing_firewalld_backend.stdout | trim == "nftables"
+    fail_msg: FirewallBackend must be nftables

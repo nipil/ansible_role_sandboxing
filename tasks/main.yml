@@ -1,0 +1,73 @@
+---
+- name: Validate configuration
+  tags: always
+  ansible.builtin.import_tasks:
+    file: validation.yml
+
+- name: Setup required packages
+  ansible.builtin.apt:
+    name:
+      - iproute2
+      - nftables
+      - firewalld
+    state: present
+
+- name: Setup global firewall
+  tags: firewall
+  ansible.builtin.import_tasks:
+    file: firewall.yml
+
+- name: Setup required services
+  ansible.builtin.systemd_service:
+    name: systemd-networkd.service
+    masked: false
+    enabled: true
+    state: started
+
+- name: Create sandboxing base folder
+  ansible.builtin.file:
+    path: "{{ sandboxing_base_home }}"
+    mode: "0755"
+    owner: root
+    group: root
+    state: directory
+
+- name: Setup sandbox
+  tags: always
+  loop: "{{ range(0, sandboxing_count) | list }}"
+  loop_control:
+    loop_var: sandboxing_index
+  vars:
+    sandboxing_name: "{{ sandboxing_base_name }}{{ sandboxing_index }}"
+    sandboxing_home: "{{ sandboxing_base_home }}/{{ sandboxing_name }}"
+  ansible.builtin.include_tasks:
+    file: sandbox.yml
+
+- name: Cleanup unused sandbox networks
+  ansible.builtin.import_tasks:
+    file: cleanup_networks.yml
+
+- name: Cleanup unused sandbox interfaces
+  ansible.builtin.import_tasks:
+    file: cleanup_interfaces.yml
+
+- name: Cleanup unused sandbox policies
+  ansible.builtin.import_tasks:
+    file: cleanup_policies.yml
+
+- name: Cleanup unused sandbox users
+  ansible.builtin.import_tasks:
+    file: cleanup_users.yml
+
+- name: Cleanup unused sandbox homes
+  ansible.builtin.import_tasks:
+    file: cleanup_homes.yml
+
+- name: Cleanup unused sandbox hosts entries
+  tags: hosts
+  ansible.builtin.import_tasks:
+    file: cleanup_hosts.yml
+
+- name: Configure kernel forwarding
+  ansible.builtin.import_tasks:
+    file: forwarding.yml

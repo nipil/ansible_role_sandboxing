@@ -1,0 +1,38 @@
+---
+- name: Find managed hosts entries
+  register: sandboxing_hosts_entries
+  failed_when: sandboxing_hosts_entries.rc not in [0, 1]
+  changed_when: false
+  ansible.builtin.command:
+    argv:
+      - grep
+      - -E
+      - >-
+        ^[[:space:]]*[^#]*[[:space:]]+(gateway_)?{{ sandboxing_base_name_regex }}[[:space:]]*(#.*)?$
+      - "{{ sandboxing_hosts_file }}"
+
+- name: Remove unused hosts entries
+  loop: |
+    {%- set unused = [] -%}
+    {%- for entry in sandboxing_hosts_entries.stdout_lines -%}
+      {%- if entry
+              | regex_search(sandboxing_base_name_regex, '\\1')
+              | first
+              | int
+              >= sandboxing_count -%}
+        {%- set _ = unused.append(entry) -%}
+      {%- endif -%}
+    {%- endfor -%}
+    {{ unused }}
+  vars:
+    sandboxing_host_index: "{{ item | regex_search(sandboxing_base_name_regex, '\\1') | first }}"
+  ansible.builtin.lineinfile:
+    path: "{{ sandboxing_hosts_file }}"
+    state: absent
+    regexp: >
+      ^\s*[^#]*\s+(gateway_)?{{ sandboxing_base_name }}{{ sandboxing_host_index }}\s*(#.*)?$
+    # bind-mounts do not support atomic writes
+    unsafe_writes: "{{
+      ansible_facts['virtualization_type'] is defined and
+      ansible_facts['virtualization_type'] in ['docker', 'containerd', 'container', 'podman', 'lxc', 'lxd']
+      }}"

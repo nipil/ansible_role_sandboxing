@@ -1,0 +1,67 @@
+---
+sandboxing_base_name: sandbox
+sandboxing_base_name_regex: "{{ sandboxing_base_name }}([0-9]+)"
+sandboxing_base_home: /opt/sandboxing
+
+sandboxing_network_prefix: /30
+sandboxing_network_size: 4
+
+sandboxing_networkd_directory: /etc/systemd/network
+sandboxing_networkd_unit_prefix: 51
+sandboxing_networkd_unit_name_regex: >-
+  {{ sandboxing_networkd_unit_prefix }}-{{ sandboxing_base_name_regex }}\.(netdev|network)
+
+sandboxing_sysctl_file: /etc/sysctl.d/99-sandboxing.conf
+
+sandboxing_firewalld_config: /etc/firewalld/firewalld.conf
+
+sandboxing_firewalld_default_zone: sandboxing
+
+sandboxing_firewalld_policies_directory: /etc/firewalld/policies
+
+sandboxing_hosts_file: /etc/hosts
+
+sandboxing_ipv4_non_public_networks:
+  ## Well-known
+  # RFC 1918 : private
+  - 10.0.0.0/8
+  - 172.16.0.0/12
+  - 192.168.0.0/16
+  # RFC 1122 : loopback
+  - 127.0.0.0/8
+  # RFC 3927 : Link-local
+  - 169.254.0.0/16
+  # RFC 6598 : Carrier-Grade NAT
+  - 100.64.0.0/10
+
+  ## TEST
+  # TEST-NET-1
+  - 192.0.2.0/24
+  # TEST-NET-2
+  - 198.51.100.0/24
+  # TEST-NET
+  - 203.0.113.0/24
+  # RFC 2544 Benchmarking
+  - 198.18.0.0/15
+
+  ## IETF Protocol Assignments
+  # RFC 6890
+  - 192.0.0.0/24
+  # RFC 3068: 6to4 relay anycast
+  - 192.88.99.0/24
+  # RFC 1112 : Reserved / future use
+  - 240.0.0.0/4
+
+  ## Non-unicast
+  # RFC 7450: Automatic Multicast Tunneling relay
+  - 192.52.193.0/24
+  # RFC 5771: Multicast
+  - 224.0.0.0/4
+  # RFC 8190/919: Limited broadcast
+  - 255.255.255.255/32
+
+  ## sinkhole for misdirected reverse-DNS queries
+  # RFC 7535: AS112-v4
+  - 192.31.196.0/24
+  # RFC 7534: AS112-v4 direct delegation
+  - 192.175.48.0/24

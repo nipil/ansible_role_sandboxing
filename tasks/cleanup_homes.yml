@@ -1,0 +1,26 @@
+- name: Find managed sandbox entries
+  register: sandboxing_base_home_content
+  ansible.builtin.find:
+    paths: "{{ sandboxing_base_home }}"
+    file_type: any
+    recurse: false
+    use_regex: true
+    patterns:
+      - "{{ '^' ~ sandboxing_base_name_regex ~ '$' }}"
+
+- name: Remove unused managed sandbox entries
+  loop: |
+    {%- set unknown = [] -%}
+    {%- for entry in sandboxing_base_home_content.files -%}
+      {%- if entry.path
+              | basename
+              | regex_replace(sandboxing_base_name_regex, '\\1')
+              | int
+              >= sandboxing_count -%}
+        {%- set _ = unknown.append(entry.path) -%}
+      {%- endif -%}
+    {%- endfor -%}
+    {{ unknown }}
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent

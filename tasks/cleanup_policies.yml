@@ -1,0 +1,18 @@
+- name: Remove sandbox policies
+  when: sandboxing_count | int == 0
+  notify: Reload firewalld - role {{ role_name }}
+  ansible.builtin.file:
+    path: "{{ sandboxing_firewalld_policies_directory }}/{{ item }}"
+    state: absent
+  loop:
+    - sandbox-to-any.xml
+    - sandbox-to-host.xml
+
+- name: Remove default sandbox zone
+  when: sandboxing_count | int == 0
+  notify: Reload firewalld - role {{ role_name }}
+  ansible.posix.firewalld:
+    permanent: true
+    offline: true
+    zone: "{{ sandboxing_firewalld_default_zone }}"
+    state: absent

@@ -1,0 +1,13 @@
+---
+- name: Reload systemd-networkd - role {{ role_name }}
+  ansible.builtin.service:
+    name: systemd-networkd
+    # calls systemctl reload systemd-networkd.service, which under the hood
+    # invokes ExecReload=networkctl r eload in the unit file on modern systemd,
+    # which is gentler to other interfaces on the same system which are unaffected
+    state: reloaded
+
+- name: Reload firewalld - role {{ role_name }}
+  ansible.builtin.service:
+    name: firewalld
+    state: reloaded

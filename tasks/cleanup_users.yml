@@ -1,0 +1,22 @@
+- name: Get all user info
+  ansible.builtin.getent:
+    database: passwd
+
+- name: Remove unused sandbox users
+  loop: >-
+    {%- set unused = [] -%}
+    {%- for user in ansible_facts.getent_passwd | dict2items -%}
+      {%- if user.key is regex(sandboxing_base_name_regex, match_type='fullmatch') -%}
+        {%- if user.key
+              | regex_replace(sandboxing_base_name_regex, '\\1')
+              | int
+              >= sandboxing_count -%}
+          {%- set _ = unused.append(user.key) -%}
+        {%- endif -%}
+      {%- endif -%}
+    {%- endfor -%}
+    {{ unused }}
+  ansible.builtin.user:
+    name: "{{ item }}"
+    state: absent
+    remove: true

@@ -1,0 +1,19 @@
+# molecule
+.molecule/
+__pycache__/
+*.pyc
+molecule/*/.cache/
+
+# ansible
+*.retry
+.ansible/
+*.log
+ansible.cfg
+
+# editors / os
+.vscode/
+.idea/
+.DS_Store
+
+# output
+out/

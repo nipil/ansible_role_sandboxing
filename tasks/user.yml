@@ -1,0 +1,45 @@
+---
+- name: Setup group
+  ansible.builtin.group:
+    name: "{{ sandboxing_name }}"
+    state: present
+
+- name: Setup user
+  ansible.builtin.user:
+    name: "{{ sandboxing_name }}"
+    group: "{{ sandboxing_name }}"
+    groups:
+      - kvm
+    append: true
+    state: present
+    shell: /bin/bash
+    password_lock: true
+    home: "{{ sandboxing_home }}"
+
+- name: Secure home
+  ansible.builtin.file:
+    path: "{{ sandboxing_home }}"
+    owner: "{{ sandboxing_name }}"
+    group: "{{ sandboxing_name }}"
+    mode: "0700"
+    state: directory
+
+- name: Find items in home
+  # only for idempotency of the next operation
+  ansible.builtin.find:
+    paths: "{{ sandboxing_home }}"
+    file_type: any
+    hidden: true
+  register: sandboxing_to_delete
+
+- name: Delete directory contents
+  when: sandboxing_to_delete.files | length > 0
+  changed_when: true
+  # insanely faster than "loop: sandboxing_to_delete"
+  ansible.builtin.command:
+    argv:
+      - find
+      - "{{ sandboxing_home }}"
+      - -mindepth
+      - 1
+      - -delete

@@ -1,0 +1,23 @@
+---
+- name: Configure kernel forwarding settings
+  ansible.posix.sysctl:
+    name: "{{ item.name }}"
+    value: "{{ item.value }}"
+    state: present
+    sysctl_set: true
+    reload: true
+    sysctl_file: "{{ sandboxing_sysctl_file }}"
+  loop:
+    # keep values as strings for idempotency (sysctl uses text)
+    - name: net.ipv4.conf.all.forwarding
+      value: "1"
+    - name: net.ipv4.conf.default.forwarding
+      value: "1"
+    - name: net.ipv6.conf.all.forwarding
+      value: "0"
+    - name: net.ipv6.conf.default.forwarding
+      value: "0"
+    - name: net.ipv4.conf.all.bc_forwarding
+      value: "0"
+    - name: net.ipv4.conf.default.bc_forwarding
+      value: "0"

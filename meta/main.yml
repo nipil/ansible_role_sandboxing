@@ -1,0 +1,32 @@
+---
+galaxy_info:
+  author: nipil
+  description: >-
+    Manage Linux sandbox users and their network isolation. Creates unprivileged
+    sandbox users with locked passwords, provisions one TAP interface per sandbox
+    via systemd-networkd, binds them to a dedicated firewalld zone, configures
+    forwarding policies and kernel sysctls, and cleans up managed resources when
+    the configured sandbox count shrinks.
+  license: MIT
+  min_ansible_version: "2.14"
+  platforms:
+    - name: Debian
+      versions:
+        - bookworm
+        - trixie
+    - name: Ubuntu
+      versions:
+        - jammy
+        - noble
+  galaxy_tags:
+    - sandbox
+    - security
+    - networking
+    - firewall
+    - firewalld
+    - nftables
+    - systemd
+    - tap
+    - kvm
+    - virtualisation
+dependencies: []

@@ -99,20 +99,26 @@ Testing is done with `tox` (python version and environment manager),
 `molecule` (ansible role testing framework) and `podman` (target
 container system-under-test).
 
-For latest ansible version, the configuration uses python 3.13 (debian 13).
+The role itself runs on **ansible-core >= 2.14** (see `meta/main.yml`).
+The automated test matrix cannot run below 2.16, because the `ansible:` key
+in `molecule/default/molecule.yml` requires molecule >= 25.9, which pulls
+ansible-core >= 2.16 via ansible-compat.
+
+For the latest ansible version, the configuration uses python 3.13 (debian 13).
 To test with the latest version of ansible :
 
 ```sh
 tox -e latest
 ```
 
-For earliest version, the configuration requires python 3.11 (install
+For the minimal version, the configuration requires python 3.11 (install
 it using `asdf`, or any other python manager, or get a locally relocatable
-from <https://github.com/astral-sh/python-build-standalone/releases>).
+from <https://github.com/astral-sh/python-build-standalone/releases>) and
+pins molecule 25.9 with ansible-core 2.16.
 To test with the minimal version of ansible :
 
 ```sh
-tox -e minimal # UNTESTED
+tox -e minimal
 ```
 
 See `tox.ini` for more details.

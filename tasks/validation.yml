@@ -77,13 +77,13 @@
       }}
     sandboxing_last_subnet_broadcast_int: >-
       {{
-        sandboxing_base_int
+        (sandboxing_base_int | int)
         if sandboxing_count == 0
-        else sandboxing_base_int + (sandboxing_count * sandboxing_network_size) - 1
+        else (sandboxing_base_int | int) + (sandboxing_count * sandboxing_network_size) - 1
       }}
   ansible.builtin.assert:
     that:
-      - (sandboxing_base_int // 0x10000) == (sandboxing_last_subnet_broadcast_int // 0x10000)
+      - (sandboxing_base_int | int // 0x10000) == (sandboxing_last_subnet_broadcast_int | int // 0x10000)
 
 - name: Validate sandboxing_networkd_unit_name_regex
   ansible.builtin.assert:

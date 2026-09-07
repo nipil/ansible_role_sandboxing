@@ -41,3 +41,7 @@
     - name: Verify firewall
       ansible.builtin.import_tasks:
         file: tasks/verify_firewall.yml
+
+    - name: Verify forwarding
+      ansible.builtin.import_tasks:
+        file: tasks/verify_forwarding.yml

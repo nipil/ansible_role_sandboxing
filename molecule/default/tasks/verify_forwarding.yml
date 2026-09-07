@@ -1,0 +1,34 @@
+---
+- name: Read kernel forwarding sysctls
+  ansible.builtin.command:
+    argv:
+      - sysctl
+      - -n
+      # must reflect below order !
+      - net.ipv4.conf.all.forwarding
+      - net.ipv4.conf.default.forwarding
+      - net.ipv6.conf.all.forwarding
+      - net.ipv6.conf.default.forwarding
+      - net.ipv4.conf.all.bc_forwarding
+      - net.ipv4.conf.default.bc_forwarding
+  changed_when: false
+  register: sandboxing_sysctl_values
+
+- name: Assert kernel forwarding
+  ansible.builtin.assert:
+    that:
+      # must reflect above order !
+      - sandboxing_sysctl_values.stdout_lines == ['1', '1', '0', '0', '0', '0']
+    fail_msg: "kernel forwarding values are not as expected"
+
+- name: Check sysctl file
+  ansible.builtin.stat:
+    path: "{{ sandboxing_sysctl_file }}"
+  changed_when: false
+  register: sandboxing_sysctl_file_stat
+
+- name: Assert sysctl file
+  ansible.builtin.assert:
+    that:
+      - sandboxing_sysctl_file_stat.stat.exists
+    fail_msg: "sysctl file {{ sandboxing_sysctl_file }} does not exist"

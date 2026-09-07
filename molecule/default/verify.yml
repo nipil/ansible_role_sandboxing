@@ -42,6 +42,10 @@
       ansible.builtin.import_tasks:
         file: tasks/verify_firewall.yml
 
+    - name: Verify hosts entries
+      ansible.builtin.import_tasks:
+        file: tasks/verify_hosts.yml
+
     - name: Verify forwarding
       ansible.builtin.import_tasks:
         file: tasks/verify_forwarding.yml

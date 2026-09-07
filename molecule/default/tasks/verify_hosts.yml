@@ -1,0 +1,13 @@
+---
+- name: Read hosts file
+  ansible.builtin.slurp:
+    src: "{{ sandboxing_hosts_file }}"
+  changed_when: false
+  register: sandboxing_hosts
+
+- name: Assert hosts entries
+  ansible.builtin.assert:
+    that:
+      - sandboxing_expected_hosts_entry in (sandboxing_hosts.content | b64decode)
+      - sandboxing_expected_gateway_entry in (sandboxing_hosts.content | b64decode)
+    fail_msg: "hosts entries for {{ sandboxing_name }} are missing"

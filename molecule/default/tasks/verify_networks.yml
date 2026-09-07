@@ -1,0 +1,47 @@
+---
+- name: Read netdev unit
+  ansible.builtin.slurp:
+    src: "{{ sandboxing_networkd_directory }}/{{ sandboxing_networkd_unit }}.netdev"
+  changed_when: false
+  register: sandboxing_netdev
+
+- name: Assert netdev unit
+  ansible.builtin.assert:
+    that:
+      - ("Name=" + sandboxing_name) in (sandboxing_netdev.content | b64decode)
+      - ("Kind=tap") in (sandboxing_netdev.content | b64decode)
+      - ("User=" + sandboxing_name) in (sandboxing_netdev.content | b64decode)
+      - ("Group=" + sandboxing_name) in (sandboxing_netdev.content | b64decode)
+    fail_msg: "netdev unit {{ sandboxing_networkd_unit }}.netdev is not as expected"
+
+- name: Read network unit
+  ansible.builtin.slurp:
+    src: "{{ sandboxing_networkd_directory }}/{{ sandboxing_networkd_unit }}.network"
+  changed_when: false
+  register: sandboxing_network_unit
+
+- name: Assert network unit
+  ansible.builtin.assert:
+    that:
+      - ("Name=" + sandboxing_name) in (sandboxing_network_unit.content | b64decode)
+      - ("Address=" + sandboxing_expected_tap_address) in (sandboxing_network_unit.content | b64decode)
+    fail_msg: "network unit {{ sandboxing_networkd_unit }}.network is not as expected"
+
+- name: Check interface state
+  ansible.builtin.command:
+    argv:
+      - ip
+      - -json
+      - link
+      - show
+      - dev
+      - "{{ sandboxing_name }}"
+  changed_when: false
+  register: sandboxing_link
+
+- name: Assert interface is up
+  ansible.builtin.assert:
+    that:
+      - sandboxing_link.rc == 0
+      - "'UP' in (sandboxing_link.stdout | from_json | map(attribute='flags') | flatten)"
+    fail_msg: "interface {{ sandboxing_name }} is missing or not administratively up"

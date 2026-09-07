@@ -33,3 +33,7 @@
     - name: Verify users
       ansible.builtin.import_tasks:
         file: tasks/verify_users.yml
+
+    - name: Verify networks
+      ansible.builtin.import_tasks:
+        file: tasks/verify_networks.yml

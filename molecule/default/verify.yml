@@ -29,4 +29,7 @@
     sandboxing_expected_hosts_entry: >-
       {{ sandboxing_network_base_octets }}.{{ (sandboxing_index | int * sandboxing_network_size) + 2 }} {{ sandboxing_name }}
 
-  tasks: []
+  tasks:
+    - name: Verify users
+      ansible.builtin.import_tasks:
+        file: tasks/verify_users.yml

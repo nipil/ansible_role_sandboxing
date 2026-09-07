@@ -1,0 +1,65 @@
+---
+- name: Look up sandbox user
+  ansible.builtin.getent:
+    database: passwd
+    key: "{{ sandboxing_name }}"
+  changed_when: false
+  register: sandboxing_getent_passwd
+
+- name: Assert sandbox user
+  ansible.builtin.assert:
+    that:
+      - sandboxing_name in sandboxing_getent_passwd.ansible_facts.getent_passwd
+      - sandboxing_getent_passwd.ansible_facts.getent_passwd[sandboxing_name][-2] == sandboxing_home
+      - sandboxing_getent_passwd.ansible_facts.getent_passwd[sandboxing_name][-1] == "/bin/bash"
+    fail_msg: "user {{ sandboxing_name }} is not configured as expected"
+
+- name: Look up sandbox and kvm groups
+  ansible.builtin.getent:
+    database: group
+  changed_when: false
+  register: sandboxing_getent_group
+
+- name: Assert sandbox and kvm membership
+  ansible.builtin.assert:
+    that:
+      - sandboxing_name in sandboxing_getent_group.ansible_facts.getent_group
+      - sandboxing_name in (sandboxing_getent_group.ansible_facts.getent_group['kvm'] | join(','))
+    fail_msg: "group setup for {{ sandboxing_name }} is not as expected"
+
+- name: Look up shadow entry
+  ansible.builtin.getent:
+    database: shadow
+    key: "{{ sandboxing_name }}"
+  changed_when: false
+  register: sandboxing_getent_shadow
+
+- name: Assert locked password
+  ansible.builtin.assert:
+    that:
+      - (sandboxing_getent_shadow.ansible_facts.getent_shadow[sandboxing_name] | first) is match("^!")
+    fail_msg: "password of {{ sandboxing_name }} is not locked"
+
+- name: Check home directory
+  ansible.builtin.stat:
+    path: "{{ sandboxing_home }}"
+  changed_when: false
+  register: sandboxing_home_stat
+
+- name: Check home directory contents
+  ansible.builtin.find:
+    paths: "{{ sandboxing_home }}"
+    file_type: any
+    hidden: true
+  changed_when: false
+  register: sandboxing_home_contents
+
+- name: Assert home directory
+  ansible.builtin.assert:
+    that:
+      - sandboxing_home_stat.stat.isdir is true
+      - sandboxing_home_stat.stat.mode == "0700"
+      - sandboxing_home_stat.stat.pw_name == sandboxing_name
+      - sandboxing_home_stat.stat.gr_name == sandboxing_name
+      - sandboxing_home_contents.files | length == 0
+    fail_msg: "home directory {{ sandboxing_home }} is not as expected"

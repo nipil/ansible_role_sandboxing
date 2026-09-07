@@ -4,5 +4,29 @@
 - name: Verify
   hosts: test_containers
   gather_facts: false # Quicker, if you do not need facts
+  vars:
+    # This replicates explicityl the default to catch breakage
+    sandboxing_base_name: sandbox
+    sandboxing_network_base_octets: 192.168.255
+    sandboxing_network_prefix: /30
+    sandboxing_network_size: 4
+    sandboxing_networkd_unit_prefix: 51
+    sandboxing_networkd_directory: /etc/systemd/network
+    sandboxing_base_home: /opt/sandboxing
+    sandboxing_firewalld_default_zone: sandboxing
+    sandboxing_firewalld_policies_directory: /etc/firewalld/policies
+    sandboxing_firewalld_config: /etc/firewalld/firewalld.conf
+    sandboxing_sysctl_file: /etc/sysctl.d/99-sandboxing.conf
+    sandboxing_hosts_file: /etc/hosts
+    sandboxing_index: 0
+    sandboxing_name: "{{ sandboxing_base_name }}{{ sandboxing_index }}"
+    sandboxing_home: "{{ sandboxing_base_home }}/{{ sandboxing_name }}"
+    sandboxing_networkd_unit: "{{ sandboxing_networkd_unit_prefix }}-{{ sandboxing_name }}"
+    sandboxing_expected_tap_address: >-
+      {{ sandboxing_network_base_octets }}.{{ (sandboxing_index | int * sandboxing_network_size) + 1 }}{{ sandboxing_network_prefix }}
+    sandboxing_expected_gateway_entry: >-
+      {{ sandboxing_network_base_octets }}.{{ (sandboxing_index | int * sandboxing_network_size) + 1 }} gateway_{{ sandboxing_name }}
+    sandboxing_expected_hosts_entry: >-
+      {{ sandboxing_network_base_octets }}.{{ (sandboxing_index | int * sandboxing_network_size) + 2 }} {{ sandboxing_name }}
 
   tasks: []

@@ -18,8 +18,7 @@ ansible:
       verbosity: 1
       # IMPORTANT : this is a comma-separated value, not a list !
       # by the way, repeating the default is required, list is not merged
-      # we need community.sops.sops because we use sops-protected development inventory file
-      vars_plugins_enabled: host_group_vars,community.sops.sops
+      vars_plugins_enabled: host_group_vars
     ssh_connection:
       pipelining: true
   env:

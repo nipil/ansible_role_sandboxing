@@ -2,7 +2,3 @@
 ---
 collections:
   - name: containers.podman
-
-  # https://docs.ansible.com/projects/ansible/latest/collections/community/sops/index.html#modules
-  - name: community.sops
-    version: ">=2.0.0,<3.0.0"

@@ -37,3 +37,7 @@
     - name: Verify networks
       ansible.builtin.import_tasks:
         file: tasks/verify_networks.yml
+
+    - name: Verify firewall
+      ansible.builtin.import_tasks:
+        file: tasks/verify_firewall.yml

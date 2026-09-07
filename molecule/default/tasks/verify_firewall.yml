@@ -1,0 +1,63 @@
+---
+- name: List firewalld zones
+  ansible.builtin.command:
+    argv:
+      - firewall-cmd
+      - --get-zones
+  changed_when: false
+  register: sandboxing_firewalld_zones
+
+- name: Get zone of sandbox interface
+  ansible.builtin.command:
+    argv:
+      - firewall-cmd
+      - --get-zone-of-interface
+      - "{{ sandboxing_name }}"
+  changed_when: false
+  register: sandboxing_firewalld_interface_zone
+
+- name: Get sandbox zone target
+  ansible.builtin.command:
+    argv:
+      - firewall-cmd
+      - --permanent
+      - --zone={{ sandboxing_firewalld_default_zone }}
+      - --get-target
+  changed_when: false
+  register: sandboxing_firewalld_zone_target
+
+- name: Assert sandbox firewalld zone
+  ansible.builtin.assert:
+    that:
+      - sandboxing_firewalld_default_zone in (sandboxing_firewalld_zones.stdout | split(' '))
+      - sandboxing_firewalld_interface_zone.stdout | trim == sandboxing_firewalld_default_zone
+      - sandboxing_firewalld_zone_target.stdout | trim == "default"
+    fail_msg: "firewalld zone setup for {{ sandboxing_name }} is not as expected"
+
+- name: Check firewalld policy files
+  ansible.builtin.stat:
+    path: "{{ sandboxing_firewalld_policies_directory }}/{{ item }}"
+  loop:
+    - sandbox-to-any.xml
+    - sandbox-to-host.xml
+  changed_when: false
+  register: sandboxing_policies
+
+- name: Assert firewalld policy files
+  ansible.builtin.assert:
+    that:
+      - (sandboxing_policies.results | map(attribute='stat') | map(attribute='exists') |
+        list | select('equalto', true) | list | length) == 2
+    fail_msg: "firewalld policy files in {{ sandboxing_firewalld_policies_directory }} are missing"
+
+- name: Read firewalld config
+  ansible.builtin.slurp:
+    src: "{{ sandboxing_firewalld_config }}"
+  changed_when: false
+  register: sandboxing_firewalld_config_contents
+
+- name: Assert nftables backend
+  ansible.builtin.assert:
+    that:
+      - ("FirewallBackend=nftables") in (sandboxing_firewalld_config_contents.content | b64decode)
+    fail_msg: "FirewallBackend must be nftables"

@@ -44,7 +44,8 @@ Ansible role that manages Linux "sandbox" users on a system.
 - `templates/sandbox.network.j2` — network unit matching sandbox name, assigning the sandbox address on its subnet.
 - `templates/sandbox-to-any.policy.j2` — firewalld policy allowing sandbox forwarding to any zone while rejecting non-public IPv4 destinations.
 - `templates/sandbox-to-host.policy.j2` — firewalld policy rejecting sandbox-initiated traffic to the host.
-- `molecule/` — molecule test scaffolding for the role.
+- `molecule/` — test scaffolding (`default/` scenario): runs the role in a systemd-capable podman container (Debian 13). `create.yml`/`destroy.yml` manage the container, `prepare.yml` installs `udev` (creates the `kvm` group), `converge.yml` applies the role, and `verify.yml` is a thin aggregator that imports themed task files from `tasks/` (`verify_users.yml` — user/group/home: `kvm` membership, locked password, `0700` empty home; `verify_networks.yml` — networkd unit contents and TAP administratively up; `verify_firewall.yml` — zone/interface binding/target, policy files, `FirewallBackend=nftables`; `verify_hosts.yml` — `/etc/hosts` entries; `verify_forwarding.yml` — kernel forwarding sysctls). Verify only checks that the TAP is administratively up — not applied addresses, since networkd does not assign addresses to admin-up-but-link-down interfaces. `side_effect.yml` and `cleanup.yml` are intentionally empty.
+- `tox.ini` — test matrix: `minimal` (molecule 25.9 + ansible-core 2.16 on python 3.11) and `latest` (unpinned). The matrix cannot run below ansible-core 2.16 because the `ansible:` key in `molecule/default/molecule.yml` requires molecule >= 25.9, which requires ansible-core >= 2.16 via ansible-compat; the role itself supports ansible-core >= 2.14.
 
 ## Conventions
 

@@ -14,10 +14,11 @@ sandboxing_networkd_unit_name_regex: >-
 sandboxing_sysctl_file: /etc/sysctl.d/99-sandboxing.conf
 
 sandboxing_firewalld_config: /etc/firewalld/firewalld.conf
-
 sandboxing_firewalld_default_zone: sandboxing
-
 sandboxing_firewalld_policies_directory: /etc/firewalld/policies
+
+sandboxing_helper_name: sandbox-vm.py
+sandboxing_helper_install_dir: /usr/local/bin
 
 sandboxing_hosts_file: /etc/hosts
 

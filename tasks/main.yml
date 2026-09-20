@@ -4,6 +4,15 @@
   ansible.builtin.import_tasks:
     file: validation.yml
 
+- name: Setup helper script
+  tags: helper
+  ansible.builtin.copy:
+    dest: "{{ sandboxing_helper_install_dir }}/{{ sandboxing_helper_name | splitext | first }}"
+    mode: "0755"
+    owner: root
+    group: root
+    src: "{{ sandboxing_helper_name }}"
+
 - name: Setup required packages
   ansible.builtin.apt:
     name:

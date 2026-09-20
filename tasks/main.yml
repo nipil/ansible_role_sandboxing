@@ -10,7 +10,18 @@
       - iproute2
       - nftables
       - firewalld
+      # for machinectl to switch user and spawn a correct user session
+      # contrary to what sudo or su, which do not spawn systemd user session
+      - systemd-container
     state: present
+
+- name: Stop unused services
+  when: not sandboxing_keep_container_services
+  loop: "{{ sandboxing_container_units }}"
+  ansible.builtin.systemd_service:
+    name: "{{ item }}"
+    masked: true
+    state: stopped
 
 - name: Setup global firewall
   tags: firewall

@@ -65,3 +65,9 @@ sandboxing_ipv4_non_public_networks:
   - 192.31.196.0/24
   # RFC 7534: AS112-v4 direct delegation
   - 192.175.48.0/24
+
+sandboxing_container_units:
+  - systemd-machined.service
+  - systemd-portabled.service
+  - systemd-importd.socket
+  - systemd-importd.service

@@ -2,3 +2,5 @@
 sandboxing_count: 0
 
 sandboxing_network_base_octets: 192.168.255
+
+sandboxing_keep_container_services: false
